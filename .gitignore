@@ -6,9 +6,6 @@ __pycache__/
 # Notebook
 *.ipynb
 
-# Token
-/module/model/encoder.py
-/module/model/gemini.py
 /credential*
 # C extensions
 *.so
