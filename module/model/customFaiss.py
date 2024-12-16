@@ -19,6 +19,11 @@ class faiss_engine():
         
         return retriver_engine
     
+    def import_faiss(self, index_file_path):
+        retriver_engine = faiss.read_index(index_file_path)
+        
+        return retriver_engine
+    
     def retrieve(self, question, k):
         
         emb_question = self.embedder.embed(question)

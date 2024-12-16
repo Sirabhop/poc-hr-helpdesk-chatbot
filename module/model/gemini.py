@@ -1,4 +1,7 @@
 import requests
+import re
+import json
+
 from typing import Any, List
 
 class TokenManager:
@@ -44,7 +47,9 @@ class Gemini:
         """Compute an embedding for a single query."""
         return self._call_embedding(text)
 
-    def generate(self, prompt: str, is_json_output: bool = False):
+    def generate(self, prompt: str, 
+                 system_instruction:str = "You are a female helpful HR helpdesk assistant for Krungthai Bank. Your role is to form an answer that you'll be given and reply back in Thai", 
+                 is_json_output: bool = False):
         """Synchronous call to Gemini API"""
         headers = {
             "Authorization": f"Bearer {self.token}",
@@ -61,7 +66,7 @@ class Gemini:
             "systemInstruction": {
                 "parts": [
                 {
-                    "text": "You are a female helpful HR helpdesk assistant for Krungthai Bank. Your role is to form an answer that you'll be given and reply back in Thai"
+                    "text": system_instruction
                 }
             ]
             },
@@ -75,7 +80,7 @@ class Gemini:
 
         response = requests.post(self.gemini_url, json=data, headers=headers)
         response.raise_for_status()
-        return self.process_response(response.json())
+        return self.process_json_response(response.json()) if is_json_output else self.process_response(response.json())
 
     def _call_embedding(self, text: str) -> List[float]:
         headers = {
@@ -100,3 +105,19 @@ class Gemini:
         ]
 
         return "".join(filter(None, candidates))
+    
+    def process_json_response(self, result: Any):
+        
+        json_string = self.process_response(result)
+        
+        try:
+            cleaned = re.sub(r"```[a-zA-Z]*\n|```$", "", json_string.strip(), flags=re.MULTILINE)
+            json_start = cleaned.find('{')
+            json_end = cleaned.rfind('}') + 1
+            if json_start == -1 or json_end == 0:
+                raise ValueError("Invalid JSON format detected.")
+            cleaned = cleaned[json_start:json_end]
+            output = json.loads(cleaned)
+            return output
+        except:
+            return "Cannot parse to json format"
