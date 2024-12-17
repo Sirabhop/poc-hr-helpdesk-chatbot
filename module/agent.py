@@ -14,9 +14,46 @@ class helpdeskAgent():
         conversation = "\n".join([f"Employee: {item['Employee']}\nAI: {item['AI']}" for item in self.memory])
         return system_prompt + "\n" + conversation
 
-    def update_meory(self, q, a):
+    def update_memory(self, q, a):
         self.memory.append({'Employee':q, 'AI':a})
         
+    def check_hallucination(self, q, a, doc):
+        print('AI is checking hallucination...')
+        instruction = f"""
+        You are a grader assessing whether an LLM generation is grounded in and supported by a set of retrieved facts. \n 
+        Give a binary score 'yes' or 'no'. 'yes' means that the answer is grounded in and supported by the set of facts.
+        """
+        
+        prompt = f"""Set of facts: \n {doc} \n LLM generation: {a}"""
+        
+        return True if self.agent.generate(prompt, instruction) == 'yes' else False
+    
+    def check_answer(self, q, a):
+        print('AI is checking answer...')
+        instruction = f"""
+        You are a grader assessing whether an answer addresses and resolves a question \n 
+        Give a binary score 'yes' or 'no'. 'yes' means that the answer resolves the question.
+        """
+        
+        prompt = f"""
+        User question: \n {q} \n LLM generation: {a}
+        """
+        
+        return True if self.agent.generate(prompt, instruction) == 'yes' else False
+        
+    def check_relevant_doc(self, q, doc):
+        print('AI is checking relevant doc...')
+        instruction = f"""
+        You are a grader assessing relevance of a retrieved document to a user question.
+        It does not need to be a stringent test. The goal is to filter out erroneous retrievals.
+        If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant.
+        Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question.
+        """
+        
+        prompt = f"""Retrieved document: \n\n {doc} \n\n User question: {q}"""
+        
+        return True if self.agent.generate(prompt, instruction) == 'yes' else False
+    
     def get_system_instruction(self):
         
         if self.get_memory():
@@ -34,15 +71,15 @@ class helpdeskAgent():
         
         return system_instruction
         
-    def retrieve(self, question):
-        print('AI is retrieving relevant information...')
+    def retrieve(self, q):
+        print(f'AI is retrieving relevant information for {q}...')
 
-        return self.retriver_engine.retrieve(question)
+        return self.retriver_engine.retrieve(q)
                 
-    def thinking(self, question):
+    def thinking(self, q):
         print('AI is thinking...')
         header = f"""
-        Given a following question from Krungthai banking employee: {question}.
+        Given a following question from Krungthai banking employee: {q}.
         Do you think you can guess what the employee is asking about?
         If yes return next_step_flag as "next_step_rag" and answers with your guess or a paraphrase of employee question
         Otherwise, return next_step_flag "next_step_clarify" and create the follow_up_question to either recheck or clarify the question.
@@ -62,33 +99,49 @@ class helpdeskAgent():
         decision_prompt = header + output_format
     
         return self.agent.generate(decision_prompt, self.get_system_instruction(), is_json_output=True)
+    
+    def response(self, q, candidates):
+        context = candidates[0].to_dict()["core_answer"]
+        print(f"AI is responding with context: Q: {candidates[0].to_dict()["core_question"]} \n A: {candidates[0].to_dict()["core_answer"]}")
+        prompt = f"""
+        Using ONLY and ALL the context below to answer the following question:
+        Context: {context}
+        Answer this question: {q}?
+        """
+        return self.agent.generate(prompt, self.get_system_instruction())
         
-    def response(self, question): 
-        
+    def run(self, question):
+        print("--- Helpdesk Agent Flow Start ---")
+
+        # Step 1: Thinking Node
         thinking_result = self.thinking(question)
         next_step_flag = thinking_result.get("next_step_flag")
         follow_up_question = thinking_result.get("follow_up_question")
-        
-        if next_step_flag == "next_step_clarify":
-            
-            self.update_meory(question, follow_up_question)
-            
-            return follow_up_question
-        
-        elif next_step_flag == "next_step_rag":
-            
-            candidates = self.retrieve(question)
-            
-            prompt = f"""
-            Using context below,
-            
-            Context: {candidates[0].to_dict()["core_answer"]}
 
-            Answer this question: {question}?
-            """
-            
-            answer = self.agent.generate(prompt, self.get_system_instruction())
-            
-            self.update_meory(question, answer)
+        if next_step_flag == "next_step_clarify":
+            self.update_memory(question, follow_up_question)
+            return follow_up_question
+
+        # Step 2: Retrieval Node
+        relevant_candidates = self.retrieve(question)
         
-            return answer
+        # relevant_candidates = []
+        # for doc in candidates:
+        #     if self.check_relevant_doc(question, doc.to_dict()["core_answer"]):
+        #         relevant_candidates.append(doc)
+
+        # if not relevant_candidates:
+        #     return "ฉันไม่พบข้อมูลที่เกี่ยวข้อง รบกวนถามใหม่อีกครั้งนะคะ"
+
+        # Step 3: Response Node
+        response = self.response(question, relevant_candidates)
+        
+        # Step 4: Hallucination Check Node
+        is_hallucinated = self.check_hallucination(question, response, relevant_candidates)
+        # Step 5: Answer Check Node
+        is_answer_correct = self.check_answer(question, response)
+        
+        # Step 6: Update Memory Node
+        if not (is_hallucinated & is_answer_correct):
+            self.update_memory(question, response)
+            return response

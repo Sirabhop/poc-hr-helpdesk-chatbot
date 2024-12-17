@@ -2,13 +2,12 @@ import streamlit as st
 import pandas as pd
 import streamlit_authenticator as stauth
 import yaml
-from yaml.loader import SafeLoader
 from module.agent import helpdeskAgent
 from module.model.retriever import retriever
 
 # Load configuration file
 with open('./config.yaml') as file:
-    config = yaml.load(file, Loader=SafeLoader)
+    config = yaml.load(file, Loader=yaml.loader.SafeLoader)
 
 # Streamlit page configuration
 st.set_page_config(page_title="RAG Chatbot from DataFrame", layout="centered")
@@ -83,7 +82,7 @@ if st.session_state["authentication_status"]:
 
             # Generate and display assistant response
             try:
-                response = agent.response(user_input)
+                response = agent.run(user_input)
             except Exception as e:
                 response = f"ขออภัยค่ะ เกิดข้อผิดพลาด: {e}"
 

@@ -10,8 +10,8 @@ class retriever():
             document (pd.DataFrame): Whole document
             method (str): Defaults to 'faiss'
         """
-        self.engine = method(document)
-        self.document_storage = DocumentStore(metaData=document, retrieverEngine=self.engine.build(document))
+        self.engine = method(document["core_question"].to_list())
+        self.document_storage = DocumentStore(metaData=document, retrieverEngine=self.engine)
         
     def get_content(self, query_index: int) -> ResponseCandidate:
         
