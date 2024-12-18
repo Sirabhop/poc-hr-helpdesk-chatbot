@@ -9,12 +9,13 @@ class DocumentStore:
 @dataclass
 class ResponseCandidate:
     index: int
+    distance: float
+    core_question: str
+    core_answer: str
     main_node: str
     responsible_team: str
     question_tag: str
     question_type: str
-    core_question: str
-    core_answer: str
 
     def to_dict(self):
         """Export the dataclass to a dictionary."""

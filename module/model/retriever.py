@@ -10,18 +10,18 @@ class retriever():
             document (pd.DataFrame): Whole document
             method (str): Defaults to 'faiss'
         """
-        self.engine = method(document["core_question"].to_list())
-        self.document_storage = DocumentStore(metaData=document, retrieverEngine=self.engine)
+        self.engine = method
+        self.document_storage = DocumentStore(metaData=document, retrieverEngine=self.engine)        
         
-    def get_content(self, query_index: int) -> ResponseCandidate:
+    def get_content(self, queries: int) -> ResponseCandidate:
         
-        df = self.document_storage.metaData
-        row = df[df['index'] == query_index]
+        index = int(queries['index'])
+        distance = queries['distance']
+
+        dict_row = self.document_storage.metaData.iloc[index].to_dict()
+        dict_row['distance'] = distance
         
-        if row.empty:
-            raise ValueError(f"No row found with index {query_index}")
-        
-        return ResponseCandidate(**row.iloc[0].to_dict())
+        return ResponseCandidate(**dict_row)
         
     def retrieve(self, question, k=3):
         

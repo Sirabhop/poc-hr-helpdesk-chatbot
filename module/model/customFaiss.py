@@ -22,7 +22,8 @@ class faiss_engine:
 
     def __embed_document(self, document):
         """Generate embeddings from document."""
-        return np.array(self.embedder.embed_documents(document)).astype('float32')
+        # return np.array(self.embedder.embed_documents(document)).astype('float32')
+        return np.load("./data/exported_embeddings.npy")
 
     def build(self, document):
         """Build FAISS index based on index type."""
@@ -64,8 +65,9 @@ class faiss_engine:
         self.engine = faiss.read_index(index_file_path)
         print(f"Index loaded from {index_file_path}")
 
-    def retrieve(self, query, k=5):
+    def retrieve(self, query:list, k:int=5):
         """Retrieve top-k similar results for a query."""
-        emb_query = np.array([self.embedder.embed(query)], dtype="float32")
-        distances, indices = self.engine.search(emb_query, k)
-        return {"indices": indices[0], "distances": distances[0]}
+        emb_queries = np.array([self.embedder.embed(q) for q in query], dtype="float32")
+        distances, indices = self.engine.search(emb_queries, k)
+        
+        return [{'index': a, 'distance': b} for a, b in zip(indices[0], distances[0])]
