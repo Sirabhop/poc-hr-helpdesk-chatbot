@@ -13,23 +13,31 @@ with open('./config.yaml') as file:
 st.set_page_config(page_title="RAG Chatbot from DataFrame", layout="centered")
 
 # Initialize the authenticator
-authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days']
-)
+try:
+    authenticator = stauth.Authenticate(
+        credentials=config.get('credentials', {}),
+        cookie_name=config.get('cookie', {}).get('name', 'default_cookie_name'),
+        key=config.get('cookie', {}).get('key', 'default_cookie_key'),
+        expiry_days=config.get('cookie', {}).get('expiry_days', 30),
+    )
+    
+except KeyError as e:
+    st.error(f"Missing key in configuration file: {e}")
+    st.stop()
 
 # Login state management
 try:
-    authenticator.login()
+    res_authentication = authenticator.login('main')
 except stauth.utilities.LoginError as e:
     st.error(e)
     
 if st.session_state["authentication_status"]:
+    
     authenticator.logout('Logout', 'sidebar')
 
     st.header("RAG Chatbot from DataFrame")
+    
+    st.write(f"Welcome {st.session_state["roles"]}, {st.session_state["name"]}.")
 
     # Load the predefined file and display it
     @st.cache_data
@@ -37,24 +45,23 @@ if st.session_state["authentication_status"]:
         return pd.read_excel(file_path, sheet_name=sheet_name)
 
     try:
-        file_path = "/Users/sirabhobs/Downloads/HR Helpdesk_Q&A Chatbot.xlsx"
-        df = load_data(file_path, "FAQ")
+        df = load_data("./data/faq.xlsx", "FAQ")
         df.reset_index(inplace=True)
-        st.write("### Preview of the DataFrame:")
-        st.dataframe(df)
+        st.write(df)
     except FileNotFoundError:
-        st.error(f"File not found at {file_path}. Please check the path and try again.")
+        st.error("File not found. Please check the path and try again.")
         st.stop()
 
     # Create retriever and chain
     @st.cache_resource
-    def initialize_agent(dataframe):
+    def initialize_agent(dataframe, preference):
         faiss_retriever = retriever(dataframe)
-        return helpdeskAgent(faiss_retriever)
+        return helpdeskAgent(faiss_retriever, preference)
 
     try:
         st.write("### Creating embeddings...")
-        agent = initialize_agent(df)
+        
+        agent = initialize_agent(df, st.session_state["roles"])
         st.success("Embeddings created successfully!")
     except Exception as e:
         st.error(f"Error creating retriever or chain: {e}")
@@ -90,7 +97,6 @@ if st.session_state["authentication_status"]:
                 st.markdown(response)
             st.session_state.messages.append({"role": "assistant", "content": response})
 
-    # Display chat and handle input
     display_chat()
     handle_user_input()
 

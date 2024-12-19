@@ -1,9 +1,10 @@
 from module.model.gemini import Gemini
 
 class helpdeskAgent():
-    def __init__(self, retriever):
-        self.retriver_engine = retriever
+    def __init__(self, retriver_engine, preference):
+        self.retriver_engine = retriver_engine
         self.agent = Gemini()
+        self.preference = preference
         self.memory = []
         
     def get_memory(self):
@@ -11,6 +12,7 @@ class helpdeskAgent():
         The following is the memory of the HelpdeskAgent containing previous interactions and context. 
         Use this information to generate accurate and contextually appropriate responses.
         """
+        
         conversation = "\n".join([f"Employee: {item['Employee']}\nAI: {item['AI']}" for item in self.memory])
         return system_prompt + "\n" + conversation
 
@@ -74,7 +76,7 @@ class helpdeskAgent():
     def retrieve(self, q):
         print(f'AI is retrieving relevant information for {q}...')
 
-        return self.retriver_engine.retrieve(q)
+        return self.retriver_engine.retrieve([q])
                 
     def thinking(self, q):
         print('AI is thinking...')
@@ -97,7 +99,7 @@ class helpdeskAgent():
         """
         
         decision_prompt = header + output_format
-    
+        
         return self.agent.generate(decision_prompt, self.get_system_instruction(), is_json_output=True)
     
     def response(self, q, candidates):
@@ -117,7 +119,8 @@ class helpdeskAgent():
         thinking_result = self.thinking(question)
         next_step_flag = thinking_result.get("next_step_flag")
         follow_up_question = thinking_result.get("follow_up_question")
-
+        print(f'AI is done thinking: {next_step_flag} and {follow_up_question}')
+        
         if next_step_flag == "next_step_clarify":
             self.update_memory(question, follow_up_question)
             return follow_up_question

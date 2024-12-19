@@ -10,7 +10,7 @@ class retriever():
             document (pd.DataFrame): Whole document
             method (str): Defaults to 'faiss'
         """
-        self.engine = method
+        self.engine = method(document)
         self.document_storage = DocumentStore(metaData=document, retrieverEngine=self.engine)        
         
     def get_content(self, queries: int) -> ResponseCandidate:

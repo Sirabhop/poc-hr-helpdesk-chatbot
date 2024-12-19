@@ -23,7 +23,7 @@ class TokenManager:
         return TokenManager.fetch_token(credential)
 
     @staticmethod
-    def get_token(location: str, local_cred_path: str = "/Users/sirabhobs/Desktop/poc-hr-helpdesk-chatbot/credential/ktb-complaint-center-poc-d47fde693217.json") -> str:
+    def get_token(location: str, local_cred_path: str = "/Users/sirabhobs/Desktop/poc-hr-helpdesk-chatbot/credential/embd_cred.json") -> str:
         """Retrieve a token based on the specified location."""
         if location == 'local':
             return TokenManager.get_local_credential(local_cred_path)
@@ -33,7 +33,7 @@ class TokenManager:
 class Gemini:
     def __init__(self):
         self.emb_url = "http://10.9.93.83:8443/contactcenter-textembedding"
-        self.gemini_url = "http://10.9.93.83:8443/complaint-gemini1_5-flash02"
+        self.gemini_url = "http://10.9.93.83:8443/contactcenter-gemini1_5-flash"
         self.max_output = 8192
         self.temperature = 0
 
