@@ -55,7 +55,9 @@ if st.session_state["authentication_status"]:
     # Create retriever and chain
     @st.cache_resource
     def initialize_agent(dataframe, preference):
+        st.write('step1')
         faiss_retriever = retriever(dataframe)
+        st.write('step2')
         return helpdeskAgent(faiss_retriever, preference)
 
     try:
