@@ -45,7 +45,7 @@ class Gemini:
         self.max_output = 8192
         self.temperature = 0
 
-        self.token = TokenManager.get_token('streamlit')
+        self.token = TokenManager.get_token('local')
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute embeddings for a list of documents."""

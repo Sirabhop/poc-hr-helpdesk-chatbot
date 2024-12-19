@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import streamlit_authenticator as stauth
 import yaml
-
 from module.agent import helpdeskAgent
 from module.model.retriever import retriever
 
