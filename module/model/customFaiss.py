@@ -23,7 +23,7 @@ class faiss_engine:
     def __embed_document(self, document):
         """Generate embeddings from document."""
         # return np.array(self.embedder.embed_documents(document)).astype('float32')
-        return np.load("./data/exported_embeddings.npy")
+        return np.load("./module/model/exported_embeddings.npy")
 
     def build(self, document):
         """Build FAISS index based on index type."""
