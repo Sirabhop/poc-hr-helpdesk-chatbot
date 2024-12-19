@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 
 class retriever():
-    def __init__(self, document:pd.DataFrame, method = faiss_engine):
+    def __init__(self, document:pd.DataFrame):
         """Retriever instance
 
         Args:
@@ -12,7 +12,7 @@ class retriever():
             method (str): Defaults to 'faiss'
         """
         st.write("Building Retriver instance...")
-        self.engine = method(document)
+        self.engine = faiss_engine(document)
         self.document_storage = DocumentStore(metaData=document, retrieverEngine=self.engine)        
         
     def get_content(self, queries: int) -> ResponseCandidate:
