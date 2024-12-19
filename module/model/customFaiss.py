@@ -27,6 +27,7 @@ class faiss_engine:
 
     def build(self, document):
         """Build FAISS index based on index type."""
+        print("Building FAISS instance...")
         embeddings = self.__embed_document(document)
         dimension = embeddings.shape[1]
         

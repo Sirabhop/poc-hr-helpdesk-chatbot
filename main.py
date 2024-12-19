@@ -48,7 +48,6 @@ if st.session_state["authentication_status"]:
     try:
         df = load_data("./data/faq.xlsx", "FAQ")
         df.reset_index(inplace=True)
-        st.write(df)
     except FileNotFoundError:
         st.error("File not found. Please check the path and try again.")
         st.stop()
