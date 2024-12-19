@@ -1,6 +1,7 @@
 from module.model.datamodel import *
 from  module.model.customFaiss import faiss_engine
 import pandas as pd
+import streamlit as st
 
 class retriever():
     def __init__(self, document:pd.DataFrame, method = faiss_engine):
@@ -10,6 +11,7 @@ class retriever():
             document (pd.DataFrame): Whole document
             method (str): Defaults to 'faiss'
         """
+        st.write("Building Retriver instance...")
         self.engine = method(document)
         self.document_storage = DocumentStore(metaData=document, retrieverEngine=self.engine)        
         
