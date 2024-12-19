@@ -1,0 +1,16 @@
+credentials:
+  usernames:
+    piyada:
+      name: Piyada
+      email: abc@gmail.com
+      roles: detail-oriented, articulate, and well explain
+      password: $2b$12$PFqth7tKlqDY7R3ZhEyr5u0f/rT.8an/AVjhgsSLcRJZM9L0cvOze
+    ktb_admin:
+      name: Admin
+      email: def@gmail.com
+      roles: attentive, mindful of using easy-to-understand vocaburary
+      password: $2b$12$PFqth7tKlqDY7R3ZhEyr5u0f/rT.8an/AVjhgsSLcRJZM9L0cvOze
+cookie:
+  expiry_days: 30
+  key: random_signature_key # Must be string
+  name: random_cookie_name

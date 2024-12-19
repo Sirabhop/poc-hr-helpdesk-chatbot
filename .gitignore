@@ -4,11 +4,7 @@ __pycache__/
 *$py.class
 
 # Notebook
-*.ipynb
 
-# Token
-/module/model/encoder.py
-/module/model/gemini.py
 /credential*
 # C extensions
 *.so
@@ -32,6 +28,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+data/embeddings
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

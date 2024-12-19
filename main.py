@@ -1,101 +1,106 @@
 import streamlit as st
-import numpy as np
 import pandas as pd
-from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_core.documents import Document
-from langchain.chains import ConversationalRetrievalChain
-from langchain.memory import ConversationBufferMemory
-from langchain_community.chat_models import ChatOpenAI
-from langchain.prompts import PromptTemplate
-from langchain.embeddings import OpenAIEmbeddings
+import streamlit_authenticator as stauth
+import yaml
+
+from module.agent import helpdeskAgent
+from module.model.retriever import retriever
+
+# Load configuration file
+with open('./config.yaml') as file:
+    config = yaml.load(file, Loader=yaml.loader.SafeLoader)
 
 # Streamlit page configuration
-st.set_page_config(page_title="RAG Chatbot from DataFrame")
-st.header("RAG Chatbot from DataFrame")
-OPENAI_API_KEY = st.text_input("OPENAI_APIKEY")
+st.set_page_config(page_title="RAG Chatbot from DataFrame", layout="centered")
 
-# Load and preprocess the DataFrame
-def preprocess_dataframe(df):
-    """Converts a DataFrame into a mapping of questions to answers."""
-    mapping = {}
-    for idx, row in df.iterrows():
-        mapping[row["core_question"].strip()] = row["core_answer"].strip()
-    return mapping
-
-# Cache the retriever to avoid recomputation
-@st.cache_resource
-def create_retriever(question_answer_mapping):
-    """Creates a retriever from the question-answer mapping using OpenAI embeddings."""
-    documents = [
-        Document(page_content=answer, metadata={"core_question": question})
-        for question, answer in question_answer_mapping.items()
-    ]
-    
-    embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
-    
-    vectorstore = FAISS.from_documents(documents, embeddings)
-    retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 1})
-    return retriever
-
-# Chain creation
-@st.cache_resource
-def create_chain(_retriever):
-    """Creates a Conversational Retrieval Chain with RAG-only responses using OpenAI API."""
-    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-    
-    # Specify the LLM and its settings
-    llm = ChatOpenAI(
-        model_name="gpt-4o",  # Use "gpt-4" if you have access and need better performance
-        temperature=0,  # Adjust the temperature as needed
-        openai_api_key=OPENAI_API_KEY  # Replace with your OpenAI API key
+# Initialize the authenticator
+try:
+    authenticator = stauth.Authenticate(
+        credentials=config.get('credentials', {}),
+        cookie_name=config.get('cookie', {}).get('name', 'default_cookie_name'),
+        key=config.get('cookie', {}).get('key', 'default_cookie_key'),
+        expiry_days=config.get('cookie', {}).get('expiry_days', 30),
     )
     
-    # Create the chain with the custom prompt
-    chain = ConversationalRetrievalChain.from_llm(
-        llm=llm, 
-        retriever=_retriever, 
-        memory=memory
-    )
+except KeyError as e:
+    st.error(f"Missing key in configuration file: {e}")
+    st.stop()
+
+# Login state management
+try:
+    res_authentication = authenticator.login('main')
+except stauth.utilities.LoginError as e:
+    st.error(e)
     
-    return chain
+if st.session_state["authentication_status"]:
+    
+    authenticator.logout('Logout', 'sidebar')
 
-# Load the predefined file
-df = pd.read_excel("/Users/sirabhobs/Downloads/HR Helpdesk_Q&A Chatbot.xlsx", sheet_name="FAQ")
+    st.header("RAG Chatbot from DataFrame")
+    
+    st.write(f"Welcome {st.session_state["name"]} 👋🏻")
 
-required_columns = ["main_node", "responsible_team", "question_tag", "core_question", "core_answer"]
-if all(column in df.columns for column in required_columns):
-    st.write("Preview of the DataFrame:")
-    st.write(df)
+    # Load the predefined file and display it
+    @st.cache_data
+    def load_data(file_path, sheet_name):
+        return pd.read_excel(file_path, sheet_name=sheet_name)
 
-    question_answer_mapping = preprocess_dataframe(df)
-    retriever = create_retriever(question_answer_mapping)
-    chain = create_chain(retriever)
+    try:
+        df = load_data("./data/faq.xlsx", "FAQ")
+        df.reset_index(inplace=True)
+    except FileNotFoundError:
+        st.error("File not found. Please check the path and try again.")
+        st.stop()
 
-    # Chat functionality
+    # Create retriever and chain
+    @st.cache_resource
+    def initialize_agent(dataframe, preference):
+        faiss_retriever = retriever(dataframe)
+        return helpdeskAgent(faiss_retriever, preference)
+
+    try:
+        st.write("### Creating embeddings...")
+        
+        agent = initialize_agent(df, st.session_state["roles"])
+        st.success("Embeddings created successfully!")
+    except Exception as e:
+        st.error(f"Error creating retriever or chain: {e}")
+        st.stop()
+
+    # Initialize chat state
     if "messages" not in st.session_state:
         st.session_state.messages = [
-            {"role": "assistant", "content": "ฉันคือผู้ช่วยสุดยอดเยี่ยม ถามอะไรตอบได้ ไม่รู้ฉันก็จะตอบให้"}
+            {"role": "assistant", "content": "สวัสดีค่ะ! ฉันคือผู้ช่วยของคุณ ถามมาได้เลยค่ะ!"}
         ]
 
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+    # Chat interface
+    def display_chat():
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
-    user_input = st.chat_input("ถามเลยค่า")
+    def handle_user_input():
+        user_input = st.chat_input("ถามอะไรมาได้เลยค่า...")
+        if user_input:
+            # Display user message
+            with st.chat_message("user"):
+                st.markdown(user_input)
+            st.session_state.messages.append({"role": "user", "content": user_input})
 
-    if user_input:
-        with st.chat_message("user"):
-            st.markdown(user_input)
+            # Generate and display assistant response
+            try:
+                response = agent.run(user_input)
+            except Exception as e:
+                response = f"ขออภัยค่ะ เกิดข้อผิดพลาด: {e}"
 
-        st.session_state.messages.append({"role": "user", "content": user_input})
+            with st.chat_message("assistant"):
+                st.markdown(response)
+            st.session_state.messages.append({"role": "assistant", "content": response})
 
-        response = chain.run(user_input)
+    display_chat()
+    handle_user_input()
 
-        with st.chat_message("assistant"):
-            st.markdown(response)
-
-        st.session_state.messages.append({"role": "assistant", "content": response})
-else:
-    st.error("The uploaded file does not contain the required columns.")
+elif st.session_state["authentication_status"] == False:
+    st.error('Username/password is incorrect')
+elif st.session_state["authentication_status"] == None:
+    st.warning('Please enter your username and password')
