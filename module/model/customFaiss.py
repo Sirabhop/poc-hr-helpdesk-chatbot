@@ -1,5 +1,6 @@
 import faiss
 import numpy as np
+import streamlit as st
 from module.model.gemini import Gemini
 
 class faiss_engine:
@@ -27,7 +28,7 @@ class faiss_engine:
 
     def build(self, document):
         """Build FAISS index based on index type."""
-        print("Building FAISS instance...")
+        st.write("Building FAISS instance...")
         embeddings = self.__embed_document(document)
         dimension = embeddings.shape[1]
         
