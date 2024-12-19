@@ -67,6 +67,9 @@ class helpdeskAgent():
         system_instruction = f"""
         You are a female helpful HR helpdesk assistant for Krungthai Bank. 
         Your role is to form an answer that you'll be given and reply back in Thai.
+        
+        And always response in the following manner {self.preference}
+        
         Without prying and asking for private information.
         {memory_propt}
         """

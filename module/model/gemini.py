@@ -1,6 +1,7 @@
 import requests
 import re
 import json
+import streamlit as st
 
 from typing import Any, List
 
@@ -19,7 +20,6 @@ class TokenManager:
         """Retrieve credential from a local file and fetch the token."""
         with open(filepath, 'r') as file:
             credential = file.read()
-            
         return TokenManager.fetch_token(credential)
 
     @staticmethod
@@ -27,6 +27,8 @@ class TokenManager:
         """Retrieve a token based on the specified location."""
         if location == 'local':
             return TokenManager.get_local_credential(local_cred_path)
+        elif location == 'streamlit':
+            return st.secrets["kong_credential"]
         else:
             raise ValueError("Invalid location specified. Choose 'local' or 'server'.")
         
@@ -37,7 +39,7 @@ class Gemini:
         self.max_output = 8192
         self.temperature = 0
 
-        self.token = TokenManager.get_token('local')
+        self.token = TokenManager.get_token('streamlit')
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute embeddings for a list of documents."""

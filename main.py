@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import streamlit_authenticator as stauth
 import yaml
+
 from module.agent import helpdeskAgent
 from module.model.retriever import retriever
 
@@ -37,7 +38,7 @@ if st.session_state["authentication_status"]:
 
     st.header("RAG Chatbot from DataFrame")
     
-    st.write(f"Welcome {st.session_state["roles"]}, {st.session_state["name"]}.")
+    st.write(f"Welcome {st.session_state["name"]} 👋🏻")
 
     # Load the predefined file and display it
     @st.cache_data
@@ -47,7 +48,6 @@ if st.session_state["authentication_status"]:
     try:
         df = load_data("./data/faq.xlsx", "FAQ")
         df.reset_index(inplace=True)
-        st.write(df)
     except FileNotFoundError:
         st.error("File not found. Please check the path and try again.")
         st.stop()
