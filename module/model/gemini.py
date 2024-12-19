@@ -24,7 +24,7 @@ class TokenManager:
     
     @staticmethod
     def get_streamlit_credential() -> str:
-        credential = json.loads(st.secrets["kong_credential"])
+        credential = json.loads(st.secrets["kong_cred"])
         return TokenManager.fetch_token(credential)
         
 
