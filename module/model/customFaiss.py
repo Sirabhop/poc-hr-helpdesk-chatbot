@@ -19,7 +19,8 @@ class faiss_engine:
         self.pq_m = pq_m
         self.hnsw_m = hnsw_m
         self.embedder = Gemini()  # Embedding model
-        self.engine = self.build(document)
+        e = self.build(document)
+        self.engine = e
         st.write("Building FAISS instance...")
 
     def __embed_document(self, document):
