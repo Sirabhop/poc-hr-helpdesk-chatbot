@@ -13,7 +13,7 @@ class faiss_engine:
         :param pq_m: Number of sub-vectors for Product Quantization.
         :param hnsw_m: Number of edges per node for HNSW index.
         """
-        
+        st.write("Building FAISS instance...")
         self.index_type = index_type
         self.nlist = nlist
         self.pq_m = pq_m
