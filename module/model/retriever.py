@@ -1,7 +1,7 @@
 from module.model.datamodel import *
 from  module.model.customFaiss import faiss_engine
 import pandas as pd
-        
+
 class retriever():
     def __init__(self, document:pd.DataFrame, method = faiss_engine):
         """Retriever instance
