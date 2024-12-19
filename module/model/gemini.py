@@ -21,6 +21,12 @@ class TokenManager:
         with open(filepath, 'r') as file:
             credential = file.read()
         return TokenManager.fetch_token(credential)
+    
+    @staticmethod
+    def get_streamlit_credential() -> str:
+        credential = json.loads(st.secrets["kong_credential"])
+        return TokenManager.fetch_token(credential)
+        
 
     @staticmethod
     def get_token(location: str, local_cred_path: str = "/Users/sirabhobs/Desktop/poc-hr-helpdesk-chatbot/credential/embd_cred.json") -> str:
@@ -28,7 +34,7 @@ class TokenManager:
         if location == 'local':
             return TokenManager.get_local_credential(local_cred_path)
         elif location == 'streamlit':
-            return st.secrets["kong_credential"]
+            return TokenManager.get_streamlit_credential()
         else:
             raise ValueError("Invalid location specified. Choose 'local' or 'server'.")
         
